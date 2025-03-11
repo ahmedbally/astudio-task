@@ -165,7 +165,7 @@ DELETE /api/timesheets/{id} - Remove entry
 ## 📦 Dependencies
 
 ### Backend (PHP)
-- PHP 8.2+
+- PHP 8.3+
 - Laravel Framework 12.x
 - Laravel Passport
 - Laravel Actions
