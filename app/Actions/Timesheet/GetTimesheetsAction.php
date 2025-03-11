@@ -13,6 +13,8 @@ class GetTimesheetsAction
 
     public function handle(User $user): LengthAwarePaginator
     {
-        return Timesheet::where('user_id', $user->id)->paginate();
+        return Timesheet::with('project')
+            ->where('user_id', $user->id)
+            ->paginate();
     }
 }
