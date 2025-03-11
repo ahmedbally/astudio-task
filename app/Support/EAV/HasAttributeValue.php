@@ -18,6 +18,30 @@ trait HasAttributeValue
     protected static ?Collection $attributesCache = null;
 
     /**
+     * Temporary storage for EAV attributes before the model is saved
+     */
+    protected array $pendingEavAttributes = [];
+
+    /**
+     * Boot the trait
+     */
+    public static function bootHasAttributeValue(): void
+    {
+        // Register a "saved" event to save pending EAV attributes after the model is saved
+        static::saved(function ($model) {
+            if (!empty($model->pendingEavAttributes)) {
+                // Batch process all pending EAV attributes after model is saved
+                $attributesToProcess = $model->pendingEavAttributes;
+                $model->pendingEavAttributes = []; // Clear before processing to avoid recursion
+
+                foreach ($attributesToProcess as $key => $value) {
+                    $model->setEavAttribute($key, $value);
+                }
+            }
+        });
+    }
+
+    /**
      * Get all attribute values for this model
      */
     public function attributeValues(): MorphMany
@@ -77,23 +101,7 @@ trait HasAttributeValue
 
         // If the attribute is not found in the model's attributes
         if ($attribute === null && !isset($this->attributes[$key]) && !$this->isRelation($key)) {
-            // Get attribute definition from cache
-            $attributeModel = $this->getAttributeByName($key);
-
-            if (!$attributeModel) {
-                return null;
-            }
-
-            // Ensure attributeValues are loaded
-            $this->ensureAttributeValuesLoaded();
-
-            // Find the attribute value by attribute ID in loaded relation
-            $attributeValue = $this->attributeValues
-                ->first(function ($value) use ($attributeModel) {
-                    return $value->attribute_id === $attributeModel->id;
-                });
-
-            return $attributeValue ? $this->castEavValue($attributeValue, $attributeModel) : null;
+            return $this->getEavAttribute($key);
         }
 
         return $attribute;
@@ -108,9 +116,9 @@ trait HasAttributeValue
      */
     public function setAttribute($key, $value): static
     {
-        if (!in_array($key, $this->fillable)) {
-            $this->setEavAttribute($key, $value);
-
+        if ($this->getAttributeByName($key) !== null) {
+            // Always store in pending attributes for deferred processing
+            $this->pendingEavAttributes[$key] = $value;
             return $this;
         }
 
@@ -184,12 +192,18 @@ trait HasAttributeValue
     {
         $result = [];
 
+        // Always store in pending attributes for deferred processing
         foreach ($attributes as $key => $value) {
-            $result[$key] = $this->setEavAttribute($key, $value);
+            if ($this->getAttributeByName($key) !== null) {
+                $this->pendingEavAttributes[$key] = $value;
+                $result[$key] = true;
+            }
         }
 
         return $result;
     }
+
+    // Rest of the trait methods remain unchanged...
 
     /**
      * Get all dynamic attributes
@@ -214,14 +228,22 @@ trait HasAttributeValue
      */
     public function getEavAttribute(string $name): mixed
     {
+        // Check pending attributes first (for both new and existing models)
+        if (array_key_exists($name, $this->pendingEavAttributes)) {
+            return $this->pendingEavAttributes[$name];
+        }
+
+        // Get attribute definition from cache
         $attributeModel = $this->getAttributeByName($name);
 
         if (!$attributeModel) {
             return null;
         }
 
+        // Ensure attributeValues are loaded
         $this->ensureAttributeValuesLoaded();
 
+        // Find the attribute value by attribute ID in loaded relation
         $attributeValue = $this->attributeValues
             ->first(function ($value) use ($attributeModel) {
                 return $value->attribute_id === $attributeModel->id;
@@ -238,6 +260,17 @@ trait HasAttributeValue
         $this->ensureAttributeValuesLoaded();
         $this->initializeAttributeCache();
         $attributes = [];
+
+        // Include pending attributes (for both new and existing models)
+        foreach ($names as $name) {
+            if (array_key_exists($name, $this->pendingEavAttributes)) {
+                $attributes[$name] = $this->pendingEavAttributes[$name];
+            }
+        }
+
+        if (count($attributes) === count($names)) {
+            return $attributes;
+        }
 
         // Get attribute IDs from names
         $attributeIds = static::$attributesCache
@@ -262,6 +295,11 @@ trait HasAttributeValue
      */
     public function hasEavAttribute(string $name): bool
     {
+        // Check pending attributes (for both new and existing models)
+        if (array_key_exists($name, $this->pendingEavAttributes)) {
+            return true;
+        }
+
         $attributeModel = $this->getAttributeByName($name);
 
         if (!$attributeModel) {
@@ -275,98 +313,18 @@ trait HasAttributeValue
     }
 
     /**
-     * Delete a specific dynamic attribute
-     */
-    public function deleteEavAttribute(string $name): bool
-    {
-        $attributeModel = $this->getAttributeByName($name);
-
-        if (!$attributeModel) {
-            return false;
-        }
-
-        $this->ensureAttributeValuesLoaded();
-
-        $toDelete = $this->attributeValues
-            ->where('attribute_id', $attributeModel->id)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($toDelete)) {
-            return false;
-        }
-
-        $result = AttributeValue::whereIn('id', $toDelete)->delete() > 0;
-
-        // Update local collection
-        if ($result) {
-            $this->load('attributeValues');
-        }
-
-        return $result;
-    }
-
-    /**
-     * Delete multiple dynamic attributes
-     */
-    public function deleteEavAttributes(array $names): int
-    {
-        $this->initializeAttributeCache();
-        $attributeIds = static::$attributesCache
-            ->whereIn('name', $names)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($attributeIds)) {
-            return 0;
-        }
-
-        $this->ensureAttributeValuesLoaded();
-
-        $toDelete = $this->attributeValues
-            ->whereIn('attribute_id', $attributeIds)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($toDelete)) {
-            return 0;
-        }
-
-        $count = AttributeValue::whereIn('id', $toDelete)->delete();
-
-        // Update local collection
-        if ($count > 0) {
-            $this->load('attributeValues');
-        }
-
-        return $count;
-    }
-
-    /**
-     * Delete all dynamic attributes for this entity
-     */
-    public function deleteAllEavAttributes(): int
-    {
-        $this->ensureAttributeValuesLoaded();
-
-        $count = $this->attributeValues()->delete();
-
-        // Clear local collection
-        if ($count > 0 && $this->relationLoaded('attributeValues')) {
-            $this->load('attributeValues');
-        }
-
-        return $count;
-    }
-
-    /**
      * Transform model data including EAV attributes
      */
     public function toArrayWithEav(): array
     {
         $data = $this->toArray();
 
-        // Add EAV attributes
+        // Add pending EAV attributes (for both new and existing models)
+        if (!empty($this->pendingEavAttributes)) {
+            $data = array_merge($data, $this->pendingEavAttributes);
+        }
+
+        // Add saved EAV attributes
         $eavAttributes = $this->getEavAttributes();
         $data = array_merge($data, $eavAttributes);
 
@@ -443,22 +401,6 @@ trait HasAttributeValue
     }
 
     /**
-     * Detect attribute type based on value
-     */
-    protected function detectAttributeType(mixed $value): string
-    {
-        if (is_numeric($value)) {
-            return 'number';
-        } elseif (is_bool($value)) {
-            return 'boolean';
-        } elseif (strtotime($value) !== false) {
-            return 'date';
-        } else {
-            return 'text';
-        }
-    }
-
-    /**
      * Scope a query to filter by dynamic attributes
      */
     public function scopeWhereEav(Builder $query, array $attributes): Builder
@@ -476,80 +418,6 @@ trait HasAttributeValue
                 $query->whereHas('attributeValues', function ($q) use ($attributeModel, $condition) {
                     $q->where('attribute_id', $attributeModel->id)
                         ->where('value', $condition);
-                });
-            }
-        }
-
-        return $query;
-    }
-
-    /**
-     * Scope a query to order by a dynamic attribute
-     */
-    public function scopeOrderByEav(Builder $query, string $name, string $direction = 'asc'): Builder
-    {
-        $attributeModel = $this->getAttributeByName($name);
-
-        if (!$attributeModel) {
-            return $query;
-        }
-
-        return $query->join('attribute_values', function ($join) use ($attributeModel) {
-            $join->on('attribute_values.entity_id', '=', $this->getTable() . '.id')
-                ->where('attribute_values.entity_type', '=', get_class($this))
-                ->where('attribute_values.attribute_id', '=', $attributeModel->id);
-        })
-            ->orderBy('attribute_values.value', $direction)
-            ->select($this->getTable() . '.*');
-    }
-
-    /**
-     * Scope a query to include entities that have a specific attribute
-     */
-    public function scopeHasEavAttribute(Builder $query, string $name): Builder
-    {
-        $attributeModel = $this->getAttributeByName($name);
-
-        if (!$attributeModel) {
-            return $query;
-        }
-
-        return $query->whereHas('attributeValues', function ($q) use ($attributeModel) {
-            $q->where('attribute_id', $attributeModel->id);
-        });
-    }
-
-    /**
-     * Scope a query to include entities that have any of the specified attributes
-     */
-    public function scopeHasAnyEavAttribute(Builder $query, array $names): Builder
-    {
-        $this->initializeAttributeCache();
-        $attributeIds = static::$attributesCache
-            ->whereIn('name', $names)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($attributeIds)) {
-            return $query;
-        }
-
-        return $query->whereHas('attributeValues', function ($q) use ($attributeIds) {
-            $q->whereIn('attribute_id', $attributeIds);
-        });
-    }
-
-    /**
-     * Scope a query to include entities that have all of the specified attributes
-     */
-    public function scopeHasAllEavAttributes(Builder $query, array $names): Builder
-    {
-        foreach ($names as $name) {
-            $attributeModel = $this->getAttributeByName($name);
-
-            if ($attributeModel) {
-                $query->whereHas('attributeValues', function ($q) use ($attributeModel) {
-                    $q->where('attribute_id', $attributeModel->id);
                 });
             }
         }
@@ -624,5 +492,18 @@ trait HasAttributeValue
                     $q->where('value', $value);
             }
         });
+    }
+
+    public function getFillable(): array
+    {
+        // for migrating first time/fresh
+        if (! app()->runningInConsole()) {
+            $this->initializeAttributeCache();
+        }
+
+        return array_merge(
+            $this->fillable,
+            self::$attributesCache?->pluck('name')->toArray() ?? []
+        );
     }
 }

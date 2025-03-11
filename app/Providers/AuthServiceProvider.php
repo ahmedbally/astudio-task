@@ -39,7 +39,6 @@ class AuthServiceProvider extends ServiceProvider
                 ->symbols();
         });
         Passport::enablePasswordGrant();
-        Passport::ignoreRoutes();
         Passport::tokensExpireIn(now()->addDays(15));
         Passport::refreshTokensExpireIn(now()->addDays(30));
     }

@@ -15,6 +15,8 @@ class AttributeValue extends Model
     protected $fillable = [
         'value',
         'attribute_id',
+        'entity_id',
+        'entity_type',
     ];
 
     public function attribute(): BelongsTo

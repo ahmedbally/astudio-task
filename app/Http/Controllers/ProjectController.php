@@ -25,7 +25,7 @@ class ProjectController extends Controller
     {
         $this->authorize('viewAny', Project::class);
 
-        $projects = $getProjectsAction->handle($request->user());
+        $projects = $getProjectsAction->handle($request->user(), $request->array('filters'));
 
         return api()
             ->success(ProjectResource::collection($projects))

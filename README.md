@@ -1,66 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 AStudio Task Manager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> A modern, Docker-powered project management and time tracking application built with Laravel 12.
 
-## About Laravel
+<div align="center">
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Powered-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Cache_Ready-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+</div>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🎯 Overview
 
-## Learning Laravel
+AStudio Task Manager is a comprehensive project management and time tracking solution designed for modern development teams. It combines robust project management capabilities with detailed time tracking features, all wrapped in a secure and scalable API-first architecture.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## ✨ Core Features
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 🏗️ Project Management
+- **Project Lifecycle Management**
+  - Create and manage projects with dynamic status tracking
+  - Support for PENDING → ACTIVE → INACTIVE transitions
+  - Soft deletion for data integrity
+- **Custom Attributes**
+  - Flexible EAV (Entity-Attribute-Value) system
+  - Extensible project metadata
+  - Dynamic filtering capabilities
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### ⏱️ Time Tracking
+- **Detailed Time Entries**
+  - Task-specific logging
+  - Date and duration tracking
+  - Project association
+  - User attribution
+- **Reporting & Analytics**
+  - Per-project time summaries
+  - User activity tracking
+  - Historical data management
 
-## Laravel Sponsors
+### 🔐 Security & Authentication
+- **OAuth2 Implementation**
+  - Secure token-based authentication
+  - Passport integration
+  - Refresh token support
+- **Fine-grained Authorization**
+  - Role-based access control
+  - Project-level permissions
+  - Policy-driven security
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🏗️ Technical Architecture
 
-### Premium Partners
+### Backend Stack
+```
+Laravel 12.x ─┬── PHP 8.2+
+              ├── MySQL 8.0
+              ├── Redis Cache
+              └── OAuth2 (Passport)
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### Infrastructure
+```
+Docker ─┬── Nginx (Web Server)
+        ├── PHP-FPM
+        ├── MySQL
+        ├── Redis
+        ├── Mailpit (Mail Testing)
+        └── Adminer (DB Management)
+```
 
-## Contributing
+## 🛠️ Development Tools
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Core Tools
+- **Laravel Telescope** - Advanced debugging
+- **Laravel Pint** - Code style enforcement
+- **PHPUnit** - Comprehensive testing
+- **Laravel Actions** - Business logic encapsulation
 
-## Code of Conduct
+### Quality Assurance
+- Automated testing pipeline
+- Code style enforcement
+- Static analysis tools
+- Development environment parity
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🔌 API Endpoints
 
-## Security Vulnerabilities
+### Authentication
+```
+POST   /api/login     - User authentication
+POST   /api/register  - New user registration
+POST   /api/logout    - Session termination
+GET    /api/user      - Current user info
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Project Management
+```
+GET    /api/projects      - List projects
+POST   /api/projects      - Create project
+GET    /api/projects/{id} - Project details
+PUT    /api/projects/{id} - Update project
+DELETE /api/projects/{id} - Remove project
+```
 
-## License
+### Time Tracking
+```
+GET    /api/timesheets      - List time entries
+POST   /api/timesheets      - Create time entry
+GET    /api/timesheets/{id} - Entry details
+PUT    /api/timesheets/{id} - Update entry
+DELETE /api/timesheets/{id} - Remove entry
+```
+### For Request and Response Examples, Please Check Postman Collection
+## 🚀 Prerequisites
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Docker and Docker Compose
+- Git
+- Composer (for local development)
+- Node.js and npm (for frontend assets)
+
+## ⚡ Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ahmedbally/astudio-task
+   cd astudio_task
+   ```
+
+2. Start the Docker environment:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Import Postman Collection:
+    ```
+    ASTUDIO TASK.postman_collection.json
+    ```
+
+4. Database Dump:
+    ```
+    dump.sql
+    ```
+
+5. Test Credentials:
+   ```
+   Email: user@astudio.com
+   Password: password
+   ```
+
+## 🌐 Service Access Points
+
+| Service  | URL                  | Description          |
+|----------|---------------------|---------------------|
+| App      | http://localhost:8000 | Main Application    |
+| Mailpit  | http://localhost:8025 | Email Testing UI    |
+| Adminer  | http://localhost:8080 | Database Management |
+
+### Adminer Login
+- System: MySQL
+- Server: db
+- Username: root
+- Password: root
+- Database: astudio_task
+
+## 📦 Dependencies
+
+### Backend (PHP)
+- PHP 8.2+
+- Laravel Framework 12.x
+- Laravel Passport
+- Laravel Actions
+- League OAuth2 Client
+
+### Development
+- Laravel Telescope
+- Laravel Pail
+- Laravel Pint

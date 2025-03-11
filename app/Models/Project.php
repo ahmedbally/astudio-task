@@ -18,6 +18,7 @@ class Project extends Model
         'status',
     ];
 
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class);

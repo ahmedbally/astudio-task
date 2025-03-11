@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./tools/app/Dockerfile
+    image: astudio_task_app
+    container_name: astudio_task_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./tools/app/php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - astudio_task_network
+    depends_on:
+      - db
+
+  web:
+    image: nginx:alpine
+    container_name: astudio_task_web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www
+      - ./tools/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - astudio_task_network
+
+  db:
+    image: mysql:8.0
+    container_name: astudio_task_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: astudio_task
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - astudio_task_network
+
+  redis:
+    image: redis:latest
+    container_name: astudio_task_redis
+    restart: unless-stopped
+    ports:
+        - "6379:6379"  # Expose Redis port (optional, for external access)
+    networks:
+        - astudio_task_network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: astudio_task_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025" # Web interface for Mailpit
+      - "1025:1025" # SMTP server port
+    networks:
+      - astudio_task_network
+
+  adminer:
+    image: adminer
+    container_name: astudio_task_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - astudio_task_network
+
+networks:
+  astudio_task_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
