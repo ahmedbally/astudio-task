@@ -101,6 +101,7 @@ GET    /api/projects/{id} - Project details
 PUT    /api/projects/{id} - Update project
 DELETE /api/projects/{id} - Remove project
 ```
+#### to filter projects ?filters[department]=like:IT, supported functions like,gt,gte,lt,lte,in,not_in
 
 ### Time Tracking
 ```
